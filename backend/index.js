@@ -56,7 +56,32 @@ app.post('/api/tournaments', async (req, res) => {
   }
 });
 
-// 3. Pendaftaran Turnamen (Registrasi Tim)
+// 3. Update turnamen
+app.put('/api/tournaments/:id', async (req, res) => {
+  try {
+    const { title, game, prize, status, organizer } = req.body;
+    const updatedTournament = await Tournament.findByIdAndUpdate(
+      req.params.id,
+      { title, game, prize, status, organizer },
+      { new: true }
+    );
+    res.json(updatedTournament);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 4. Hapus turnamen
+app.delete('/api/tournaments/:id', async (req, res) => {
+  try {
+    await Tournament.findByIdAndDelete(req.params.id);
+    res.json({ message: "Turnamen berhasil dihapus!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. Pendaftaran Turnamen (Registrasi Tim)
 app.post('/api/registrations', async (req, res) => {
   try {
     const { tournamentId, teamName, contactInfo } = req.body;
@@ -82,8 +107,8 @@ app.get('/api/talents', async (req, res) => {
 // 2. Tambah caster baru
 app.post('/api/talents', async (req, res) => {
   try {
-    const { name, gameSpecialty, ratePerMatch, portfolioUrl } = req.body;
-    const newTalent = new Talent({ name, gameSpecialty, ratePerMatch, portfolioUrl });
+    const { name, gameSpecialty, ratePerMatch, portfolioUrl, imageUrl } = req.body;
+    const newTalent = new Talent({ name, gameSpecialty, ratePerMatch, portfolioUrl, imageUrl });
     await newTalent.save();
     res.status(201).json(newTalent);
   } catch (error) {

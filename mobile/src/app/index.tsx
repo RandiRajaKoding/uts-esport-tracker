@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, ActivityIndicator, TouchableOpacity, Platform, Image, Modal, TextInput, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 // Jika pakai Android Emulator, gunakan 10.0.2.2. Jika di web, gunakan localhost.
 const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [tournaments, setTournaments] = useState([]);
   const [talents, setTalents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,13 @@ export default function HomeScreen() {
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [teamName, setTeamName] = useState('');
   const [contactInfo, setContactInfo] = useState('');
+
+  // States untuk Tambah Data
+  const [showAddTournament, setShowAddTournament] = useState(false);
+  const [newTourData, setNewTourData] = useState({ title: '', game: '', prize: '', organizer: '' });
+  
+  const [showAddTalent, setShowAddTalent] = useState(false);
+  const [newTalentData, setNewTalentData] = useState({ name: '', gameSpecialty: 'Valorant', ratePerMatch: '', imageUrl: '' });
 
   useEffect(() => {
     fetchData();
@@ -74,6 +83,38 @@ export default function HomeScreen() {
     }
   };
 
+  const handleAddTournament = async () => {
+    try {
+      const res = await fetch(`${API_URL}/tournaments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newTourData, status: 'Open' })
+      });
+      if (res.ok) {
+        alert("Turnamen berhasil ditambahkan!");
+        setShowAddTournament(false);
+        setNewTourData({ title: '', game: '', prize: '', organizer: '' });
+        fetchData();
+      }
+    } catch (error) { console.error(error); }
+  };
+
+  const handleAddTalent = async () => {
+    try {
+      const res = await fetch(`${API_URL}/talents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newTalentData, ratePerMatch: Number(newTalentData.ratePerMatch) || 0 })
+      });
+      if (res.ok) {
+        alert("Talent berhasil ditambahkan!");
+        setShowAddTalent(false);
+        setNewTalentData({ name: '', gameSpecialty: 'Valorant', ratePerMatch: '', imageUrl: '' });
+        fetchData();
+      }
+    } catch (error) { console.error(error); }
+  };
+
   const renderTournament = ({ item }) => (
     <View style={styles.tournamentCard}>
       <View style={styles.tournamentHeader}>
@@ -121,7 +162,12 @@ export default function HomeScreen() {
 
               <Text style={styles.headerTitle}>TARKAMHUB 🚀</Text>
               
-              <Text style={styles.sectionTitle}>Talent & Caster Tersedia</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Talent & Caster Tersedia</Text>
+                <TouchableOpacity onPress={() => setShowAddTalent(true)} style={styles.addButton}>
+                  <Text style={styles.addButtonText}>+ Tambah Caster</Text>
+                </TouchableOpacity>
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.talentScroll}>
                 {talents.map((talent, index) => (
                   <TouchableOpacity 
@@ -144,7 +190,12 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.sectionTitle}>Turnamen Aktif</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Turnamen Aktif</Text>
+                <TouchableOpacity onPress={() => setShowAddTournament(true)} style={styles.addButton}>
+                  <Text style={styles.addButtonText}>+ Tambah Turnamen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           }
         />
@@ -224,6 +275,53 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      {/* Modal Tambah Turnamen */}
+      <Modal visible={showAddTournament} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tambah Turnamen Baru</Text>
+            <TextInput style={styles.input} placeholder="Nama Turnamen" placeholderTextColor="#A0AEC0" value={newTourData.title} onChangeText={t => setNewTourData({...newTourData, title: t})} />
+            <TextInput style={styles.input} placeholder="Game (Contoh: MLBB)" placeholderTextColor="#A0AEC0" value={newTourData.game} onChangeText={t => setNewTourData({...newTourData, game: t})} />
+            <TextInput style={styles.input} placeholder="Hadiah (Rp 5.000.000)" placeholderTextColor="#A0AEC0" value={newTourData.prize} onChangeText={t => setNewTourData({...newTourData, prize: t})} />
+            <TextInput style={styles.input} placeholder="Nama Penyelenggara" placeholderTextColor="#A0AEC0" value={newTourData.organizer} onChangeText={t => setNewTourData({...newTourData, organizer: t})} />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowAddTournament(false)}><Text style={styles.cancelButtonText}>Batal</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={handleAddTournament}><Text style={styles.confirmButtonText}>Simpan</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Tambah Talent */}
+      <Modal visible={showAddTalent} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tambah Caster Baru</Text>
+            <TextInput style={styles.input} placeholder="Nama Talent" placeholderTextColor="#A0AEC0" value={newTalentData.name} onChangeText={t => setNewTalentData({...newTalentData, name: t})} />
+            
+            <Text style={styles.fieldLabel}>Kategori Game:</Text>
+            <View style={styles.chipContainer}>
+              {['Valorant', 'Mobile Legends', 'PUBG Mobile', 'Free Fire'].map(game => (
+                <TouchableOpacity 
+                  key={game} 
+                  style={[styles.chip, newTalentData.gameSpecialty === game && styles.chipActive]}
+                  onPress={() => setNewTalentData({...newTalentData, gameSpecialty: game})}
+                >
+                  <Text style={[styles.chipText, newTalentData.gameSpecialty === game && styles.chipTextActive]}>{game}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput style={styles.input} placeholder="Tarif Per Match (angka saja)" placeholderTextColor="#A0AEC0" keyboardType="numeric" value={newTalentData.ratePerMatch} onChangeText={t => setNewTalentData({...newTalentData, ratePerMatch: t})} />
+            <TextInput style={styles.input} placeholder="URL Foto Profil (Opsional)" placeholderTextColor="#A0AEC0" value={newTalentData.imageUrl} onChangeText={t => setNewTalentData({...newTalentData, imageUrl: t})} />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowAddTalent(false)}><Text style={styles.cancelButtonText}>Batal</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={handleAddTalent}><Text style={styles.confirmButtonText}>Simpan</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -266,12 +364,61 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    marginTop: 10,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#640000',
+  },
+  addButton: {
+    backgroundColor: '#640000',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  addButtonText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1A202C',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 15,
-    marginTop: 10,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: '#CBD5E0',
+  },
+  chipActive: {
+    backgroundColor: '#640000',
+    borderColor: '#640000',
+  },
+  chipText: {
+    fontSize: 12,
+    color: '#4A5568',
+    fontWeight: '600',
+  },
+  chipTextActive: {
+    color: '#FFFFFF',
   },
   talentScroll: {
     marginBottom: 25,

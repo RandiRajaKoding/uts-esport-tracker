@@ -27,6 +27,15 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="admin">
+        <NativeTabs.Trigger.Label>Admin</NativeTabs.Trigger.Label>
+        {/* Menggunakan icon yang ada (explore.png atau home.png) sebagai contoh, tapi di kehidupan nyata bisa pakai icon khusus */}
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
